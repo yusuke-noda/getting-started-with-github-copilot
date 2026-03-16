@@ -47,3 +47,38 @@ def test_signup_invalid_activity(client):
     # Assert
     assert response.status_code == 404
     assert "Activity not found" in response.json()["detail"]
+
+
+def test_unregister_success(client):
+    # Arrange
+    email = "unregister_test@mergington.edu"
+    activity = "Chess Club"
+    # Register beforehand
+    client.post(f"/activities/{activity}/signup", params={"email": email})
+    # Act
+    response = client.post(f"/activities/{activity}/unregister", params={"email": email})
+    # Assert
+    assert response.status_code == 200
+    assert "Unregistered" in response.json()["message"]
+
+
+def test_unregister_not_signed_up(client):
+    # Arrange
+    email = "notregistered@mergington.edu"
+    activity = "Chess Club"
+    # Act
+    response = client.post(f"/activities/{activity}/unregister", params={"email": email})
+    # Assert
+    assert response.status_code == 400
+    assert "not signed up" in response.json()["detail"]
+
+
+def test_unregister_invalid_activity(client):
+    # Arrange
+    email = "ghost@mergington.edu"
+    activity = "Nonexistent Club"
+    # Act
+    response = client.post(f"/activities/{activity}/unregister", params={"email": email})
+    # Assert
+    assert response.status_code == 404
+    assert "Activity not found" in response.json()["detail"]
