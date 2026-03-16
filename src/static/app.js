@@ -20,14 +20,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
-        activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
-          <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
-        `;
+          activityCard.innerHTML = `
+            <h4>${name}</h4>
+            <p>${details.description}</p>
+            <p><strong>Schedule:</strong> ${details.schedule}</p>
+            <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+            <div class="participants-section">
+              <strong>Participants:</strong>
+              ${details.participants.length > 0
+                ? `<div class="participants-list">${details.participants
+                    .map(
+                      (email) => `
+                        <span class="participant-item">
+                          ${email}
+                          <button class="delete-btn" title="Unregister" data-activity="${name}" data-email="${email}">
+                            <span class="delete-icon">&#128465;</span>
+                          </button>
+                        </span>`
+                    )
+                    .join("")}</div>`
+                : `<p class="no-participants">No participants yet.</p>`}
+            </div>
+          `;
 
         activitiesList.appendChild(activityCard);
+
+          // 削除ボタンのイベントリスナーを追加
+          const deleteBtns = activityCard.querySelectorAll(".delete-btn");
+          deleteBtns.forEach((btn) => {
+            btn.addEventListener("click", async (e) => {
+              e.preventDefault();
+              const activityName = btn.getAttribute("data-activity");
+              const email = btn.getAttribute("data-email");
+              try {
+                const response = await fetch(
+                  `/activities/${encodeURIComponent(activityName)}/unregister?email=${encodeURIComponent(email)}`,
+                  {
+                    method: "POST",
+                  }
+                );
+                const result = await response.json();
+                if (response.ok) {
+                  fetchActivities();
+                } else {
+                  alert(result.detail || "Failed to unregister participant.");
+                }
+              } catch (error) {
+                alert("Failed to unregister participant.");
+              }
+            });
+          });
 
         // Add option to select dropdown
         const option = document.createElement("option");
@@ -62,6 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        fetchActivities(); // 参加登録後にアクティビティ一覧を更新
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
